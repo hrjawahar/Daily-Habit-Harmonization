@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>zenifyMove — A movement awareness engine</title>
+<style>
+  :root {
+    --bg:#ffffff;
+    --ink:#0b0b12;
+    --muted:#4b5563;
+    --muted2:#6b7280;
+    --card:#ffffff;
+    --border:rgba(15, 23, 42, .12);
+    --shadow:0 18px 50px rgba(2, 6, 23, .10);
+    --r:20px;
+
+    --purple:#3b0a7a;
+    --purple2:#5b21b6;
+    --neon:#00e5ff;
+    --neon2:#a3ff12;
+
+    --cta:#111827;
+    --ctaText:#ffffff;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    background: var(--bg);
+    color: var(--ink);
+    padding: 22px;
+  }
+  .wrap{max-width: 860px; margin: 0 auto;}
+  header{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    margin-bottom:14px; flex-wrap:wrap;
+  }
+  .brand{display:flex; gap:12px; align-items:center}
+  .logo{
+    width:44px;height:44px;border-radius:16px;
+    background:
+      radial-gradient(16px 16px at 65% 35%, rgba(0,229,255,.95), transparent 60%),
+      radial-gradient(18px 18px at 35% 65%, rgba(163,255,18,.55), transparent 62%),
+      linear-gradient(135deg, rgba(59,10,122,1), rgba(91,33,182,1));
+    box-shadow: 0 10px 28px rgba(91,33,182,.22);
+    display:grid; place-items:center;
+    border:1px solid rgba(0,229,255,.35);
+  }
+  .logo span{filter: drop-shadow(0 6px 10px rgba(0,229,255,.25));}
+  .title h1{font-size:18px;margin:0}
+  .title p{margin:2px 0 0; color:var(--muted2); font-size:12.5px}
+  .topnav{display:flex; gap:8px; flex-wrap:wrap}
+  .topnav button{
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    padding:9px 10px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:800;
+    font-size:12.5px;
+  }
+  .topnav button.active{
+    border-color: rgba(0,229,255,.55);
+    box-shadow: 0 10px 26px rgba(0,229,255,.10);
+  }
+
+  .card{
+    background: var(--card);
+    border:1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+  }
+  .card-inner{padding:18px}
+  .hr{height:1px;background:rgba(15,23,42,.08); margin:14px 0}
+  .screen{display:none}
+  .screen.active{display:block}
+
+  .hero-title{
+    font-size: 34px;
+    line-height: 1.1;
+    letter-spacing: -0.7px;
+    margin: 0;
+    font-weight: 950;
+  }
+  .hero-sub{
+    margin: 10px 0 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 72ch;
+  }
+  .hand{font-family: "Comic Sans MS","Segoe Print","Bradley Hand",cursive; color: var(--neon); font-weight: 900;}
+  .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+    border:1px solid rgba(0,229,255,.45); background:rgba(0,229,255,.06); font-size:12px; color: #0b1220; font-weight:900;}
+  .pill b{color: var(--purple2)}
+
+  .btnrow{display:flex; gap:10px; flex-wrap:wrap; margin-top: 16px; align-items:center}
+  button{
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    padding:11px 14px;
+    border-radius:16px;
+    cursor:pointer;
+    font-weight: 900;
+  }
+  .cta{
+    background: var(--cta);
+    color: var(--ctaText);
+    border-color: rgba(17,24,39,.85);
+    box-shadow: 0 14px 30px rgba(17,24,39,.14);
+  }
+  .cta:hover{transform: translateY(-1px)}
+  .ghost{background:#fff}
+  .tiny{font-size:12.5px; color: var(--muted2)}
+
+  .proof{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    margin-top: 14px;
+  }
+  .proof .box{
+    border:1px solid rgba(0,229,255,.28);
+    background: rgba(0,229,255,.05);
+    border-radius:16px;
+    padding:10px 12px;
+    font-size:12.5px;
+    color:#0b1220;
+  }
+  .proof .quote{border-color: rgba(91,33,182,.22); background: rgba(91,33,182,.04); color: #111827}
+
+  .badge{
+    display:inline-flex; align-items:center; gap:8px; padding:7px 10px;
+    border:1px solid var(--border); border-radius:999px; background:#fff;
+    font-size:12px; color:var(--muted2); font-weight:800;
+  }
+  .progress{height:8px;border-radius:999px;background:rgba(15,23,42,.06);border:1px solid rgba(15,23,42,.08);overflow:hidden;margin-top:10px}
+  .progress>div{height:100%; width:0%; background: linear-gradient(90deg, var(--purple2), var(--neon));}
+
+  .promptTop{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start}
+  .promptMeta{display:flex; gap:8px; flex-wrap:wrap}
+
+  .compare{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px}
+  .compare .cell{border:1px solid var(--border); border-radius:16px; padding:12px; background:#fff}
+  .compare .lbl{font-size:12px; color: var(--muted2)}
+  .compare .val{margin-top:8px; font-weight: 950; letter-spacing:.1px}
+
+  .qbox{margin-top:14px; border:1px solid var(--border); border-radius:18px; padding:16px; background:#fff}
+  .question{font-size:18.5px; margin:0; font-weight: 950; letter-spacing: -0.15px}
+  .gap{height: 16px}
+  .gap2{height: 16px}
+
+  .options{display:flex; gap:10px; flex-wrap:wrap}
+  .opt{
+    flex: 1 1 240px;
+    border:1px solid var(--border); border-radius:16px;
+    padding:11px 12px; background:#fff; cursor:pointer;
+  }
+  .opt:hover{border-color: rgba(0,229,255,.55); box-shadow: 0 12px 24px rgba(0,229,255,.08);}
+  .opt input{margin-right:8px}
+  .textline{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+    font-size: 15px;
+  }
+  .textline::placeholder{color: rgba(75,85,99,.7)}
+  .micro{margin-top:0; color: var(--muted); font-size:13.5px; line-height:1.55}
+
+  .btnbar{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:14px}
+  button:disabled{opacity:.45; cursor:not-allowed}
+
+  .finish{background: rgba(0,229,255,.10); border-color: rgba(0,229,255,.45);}
+  .subtle{color: var(--muted2); font-size:12.5px; margin-top:10px}
+  .center{text-align:center}
+
+  input[type="time"]{
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:9px 10px;
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+  }
+  .chk{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12.5px}
+  .chk input{transform: scale(1.08)}
+  .remRow{
+    display:grid; grid-template-columns: 1.1fr 1fr .9fr; gap:10px; align-items:center;
+    border:1px solid var(--border); border-radius:16px; padding:12px; background:#fff;
+    margin-top:10px;
+  }
+
+  .calTop{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+  .calGridHead, .calGrid{display:grid; grid-template-columns:repeat(7,1fr); gap:9px; margin-top:10px}
+  .dow{font-size:11px; color: var(--muted2); text-align:center; padding:6px 0}
+  .day{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:10px;
+    background:#fff;
+    min-height:76px;
+    cursor:pointer;
+    transition: transform .06s ease;
+  }
+  .day:hover{transform: translateY(-1px); border-color: rgba(0,229,255,.45);}
+  .day.dim{opacity:.40; cursor:default;}
+  .day.dim:hover{transform:none; border-color: var(--border);}
+  .day .n{display:flex; justify-content:space-between; font-weight:950; font-size:12px}
+  .marks{margin-top:9px; display:flex; gap:6px; flex-wrap:wrap}
+  .tag{font-size:10px; padding:4px 7px; border-radius:999px; border:1px solid var(--border); background:#fff;}
+  .tag.done{border-color: rgba(0,229,255,.55); background: rgba(0,229,255,.08);}
+  .tag.fin{border-color: rgba(91,33,182,.35); background: rgba(91,33,182,.06);}
+  .tag.ins{border-color: rgba(163,255,18,.55); background: rgba(163,255,18,.10);}
+
+  .modal{position:fixed; inset:0; background: rgba(2,6,23,.35); display:none; align-items:center; justify-content:center; padding:18px;}
+  .modal.active{display:flex}
+  .modal .panel{max-width: 820px; width:100%; background:#fff; border:1px solid rgba(0,0,0,.08); border-radius: 22px; box-shadow: 0 30px 80px rgba(2,6,23,.22);}
+  .modal .panel .inner{padding:18px}
+  .modal h3{margin:0; font-size:18px}
+  .modal p{color: var(--muted); line-height:1.6}
+  .modal .closeRow{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo"><span>🔊</span></div>
+      <div class="title">
+        <h1>zenifyMove</h1>
+        <p>A movement awareness engine • Zero AI • Offline-first</p>
+      </div>
+    </div>
+    <div class="topnav">
+      <button id="navIntro" class="active">Intro</button>
+      <button id="navHome">Home</button>
+      <button id="navToday">Today</button>
+      <button id="navInsights">Insights</button>
+      <button id="navReminders">Reminders</button>
+      <button id="navCalendar">Calendar</button>
+    </div>
+  </header>
+
+  <div class="card"><div class="card-inner">
+
+    <section id="intro" class="screen active">
+      <div class="pill">🔒 <b>Zero AI</b> • No influencers • No hacks</div>
+      <h2 class="hero-title" style="margin-top:10px">
+        Stop Following Algorithms.<br/>Start Trusting Yourself.
+      </h2>
+      <p class="hero-sub">
+        The pioneering first habit tool with <span class="hand">Zero AI</span>. No influencers, no "hacks," no noise—just your own intelligence vs. your yesterday.
+      </p>
+
+      <div class="btnrow">
+        <button class="cta" id="goHomeBtn">Enter zenifyMove</button>
+        <button class="ghost" id="readStoryBtn1">Read full founder’s story</button>
+      </div>
+
+      <div class="proof">
+        <div class="box"><b>Private by design:</b> your data stays on your device.</div>
+        <div class="box quote">“I stopped comparing myself to others. I started noticing myself.”</div>
+      </div>
+
+      <div class="subtle">Three-second test: this serves humans tired of algorithm-led habit advice.</div>
+    </section>
+
+    <section id="home" class="screen">
+      <h2 class="hero-title">Stop Following Algorithms. Start Trusting Yourself.</h2>
+      <p class="hero-sub">
+        The pioneering habit tool with <span class="hand">Zero AI</span>. No influencers, no "hacks," no noise—just your own intelligence vs. your yesterday.
+      </p>
+
+      <div class="hr"></div>
+
+      <p style="margin:0; color:var(--muted); line-height:1.65; max-width: 80ch">
+        <b style="color:var(--ink)">The Era of Your Own Intelligence.</b><br/>
+        Tired of AI gurus and social media blueprints? We were too. What works for others fails us because we are unique humans, not algorithms.<br/><br/>
+        <b style="color:var(--ink)">zenifyMove</b> is the tool designed for the human in you. We consciously decided not to use any AI or algorithms. This is purely your thinking space to look inward, trust your own intelligence, and build goals that actually stick.
+      </p>
+
+      <ul style="margin:14px 0 0 18px; color:var(--muted); line-height:1.65">
+        <li><b style="color:var(--ink)">No Algorithms:</b> No "suggested" habits or AI-generated goals. You define your path.</li>
+        <li><b style="color:var(--ink)">Self vs. Self:</b> Compare your today with your yesterday—powered by your own observations.</li>
+        <li><b style="color:var(--ink)">Privacy by Design:</b> Your thinking space is private. Your data stays yours.</li>
+      </ul>
+
+      <div class="proof">
+        <div class="box"><b>1,000+</b> early testers (prototype)</div>
+        <div class="box quote">“Finally a tool that doesn’t tell me what to do.”</div>
+      </div>
+
+      <div class="btnrow" style="margin-top:18px">
+        <button class="cta" id="tryTodayBtn">Start Today (Self vs Self)</button>
+        <button class="ghost" id="readStoryBtn2">Read full founder’s story</button>
+      </div>
+    </section>
+
+    <section id="today" class="screen">
+      <div class="promptTop">
+        <div>
+          <div class="badge" id="activeDateChip">Date: —</div>
+          <div class="subtle" id="activeHint">Choose a date in Calendar to backfill, or stay on today.</div>
+        </div>
+        <div class="promptMeta">
+          <span class="badge" id="promptIdx">—</span>
+          <span class="badge" id="shiftChip">—</span>
+          <button class="finish" id="finishDayBtn" title="Mark this day as finished for calendar">Finish Day</button>
+        </div>
+      </div>
+
+      <div class="progress"><div id="prog"></div></div>
+
+      <div class="compare">
+        <div class="cell">
+          <div class="lbl" id="yLbl">Yesterday</div>
+          <div class="val" id="yVal">—</div>
+        </div>
+        <div class="cell">
+          <div class="lbl" id="tLbl">Selected day</div>
+          <div class="val" id="tVal">—</div>
+        </div>
+      </div>
+
+      <div class="qbox">
+        <div class="badge" id="clusterBadge" style="margin-bottom:10px">—</div>
+        <div class="question" id="qText"><span>—</span></div>
+        <div class="gap"></div>
+        <div id="resp"></div>
+        <div class="gap2"></div>
+        <div class="micro" id="micro">—</div>
+      </div>
+
+      <div class="btnbar">
+        <div>
+          <button id="prev">Back</button>
+          <button id="skip">Skip</button>
+        </div>
+        <div>
+          <button class="cta" id="next">Next</button>
+        </div>
+      </div>
+
+      <div class="subtle center">Auto-saves as you answer. No cloud. No logins.</div>
+    </section>
+
+    <section id="insights" class="screen">
+      <h2 style="margin:0">Insights</h2>
+      <p class="hero-sub">Awareness → action (incremental). Compliments included. No criticism.</p>
+      <div class="hr"></div>
+
+      <div class="card"><div class="card-inner" id="monthlyBlock">
+        <h3 style="margin:0">Monthly Insight</h3>
+        <p class="tiny">A tiny invitation. Not a reset. Not a challenge.</p>
+        <div class="hr"></div>
+        <p style="margin:0; color:var(--muted); line-height:1.75">
+          <b style="color:var(--ink)">What quietly improved</b><br/>
+          If you noticed even one moment, you moved.<br/><br/>
+          <b style="color:var(--ink)">One incremental step</b><br/>
+          Pick one repeat moment (tea time / commute / post-dinner) and add a 10‑second pause—once this week.<br/><br/>
+          <b style="color:var(--ink)">Compliment</b><br/>
+          Small difference seen is small difference earned.
+        </p>
+      </div></div>
+
+      <div class="hr"></div>
+
+      <div class="card"><div class="card-inner" id="yearlyBlock">
+        <h3 style="margin:0">Yearly Insight</h3>
+        <p class="tiny">Two screens merged into one section here for prototype simplicity.</p>
+        <div class="hr"></div>
+        <p style="margin:0; color:var(--muted); line-height:1.75">
+          <b style="color:var(--ink)">Before you read further</b><br/>
+          This is not based on how often you used the tool. It does not measure discipline. It’s a pause you can take or skip.<br/><br/>
+          <b style="color:var(--ink)">Annual reflection</b><br/>
+          If the year asks one thing: choose consistency over intensity—one small repeatable action at a time.<br/><br/>
+          <b style="color:var(--ink)">Compliment</b><br/>
+          You’re building trust with yourself. That’s a real win.
+        </p>
+      </div></div>
+    </section>
+
+    <section id="reminders" class="screen">
+      <h2 style="margin:0">Reminders</h2>
+      <p class="hero-sub">Editable time windows. Saved locally. For app, these can become device notifications.</p>
+      <div class="hr"></div>
+
+      <div class="remRow"><div style="font-weight:950">Morning check-in</div><input type="time" id="tMorning"/><label class="chk"><input type="checkbox" id="eMorning"/> Enable</label></div>
+      <div class="remRow"><div style="font-weight:950">Mid-day check</div><input type="time" id="tMidday"/><label class="chk"><input type="checkbox" id="eMidday"/> Enable</label></div>
+      <div class="remRow"><div style="font-weight:950">Evening check</div><input type="time" id="tEvening"/><label class="chk"><input type="checkbox" id="eEvening"/> Enable</label></div>
+      <div class="remRow"><div style="font-weight:950">Bedtime settle</div><input type="time" id="tBed"/><label class="chk"><input type="checkbox" id="eBed"/> Enable</label></div>
+
+      <div class="btnrow" style="justify-content:flex-end">
+        <button class="cta" id="saveRem">Save</button>
+      </div>
+    </section>
+
+    <section id="calendar" class="screen">
+      <div class="calTop">
+        <div>
+          <h2 style="margin:0">Calendar</h2>
+          <p class="tiny" style="margin:6px 0 0">Click any date to open and edit that day. “Yesterday” auto-shifts based on the selected date.</p>
+        </div>
+        <div class="btnrow" style="margin:0">
+          <button id="calPrev">Prev</button>
+          <button id="calNext">Next</button>
+          <button class="cta" id="goTodayFromCal">Open Today</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="badge" id="calTitle">Month</div>
+
+      <div class="calGridHead">
+        <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+      </div>
+      <div class="calGrid" id="calGrid"></div>
+
+      <div class="hr"></div>
+      <div class="tiny">Markers: ✅ entries saved • ✨ Finish Day marked • 🗓️ last Saturday of month • 🏁 Jan 1 / Dec 31</div>
+    </section>
+
+  </div></div>
+</div>
+
+<div class="modal" id="storyModal" role="dialog" aria-modal="true" aria-label="Founder story">
+  <div class="panel">
+    <div class="inner">
+      <div class="closeRow">
+        <div>
+          <h3>Designed for Humans, Not Algorithms.</h3>
+          <p class="tiny" style="margin:6px 0 0">You don’t need more data; you need more awareness.</p>
+        </div>
+        <button id="closeStory" class="ghost">Close</button>
+      </div>
+      <div class="hr"></div>
+      <p style="margin:0">
+        <b>The Deep Dive: Why We Chose Human Intelligence Over Artificial Intelligence</b><br/><br/>
+        We’ve reached a breaking point. Every day, we are flooded with "perfect" wellness routines and financial "blueprints" served by algorithms and social threads. We try to mirror them, only to find they don't fit our lives. We end up stuck, overthinking, and feeling like we’ve failed a technical test we never signed up for.<br/><br/>
+        The truth is: What works for a million others won't necessarily work for you. We are all unique variables.<br/><br/>
+        In a world where most of the content you consume is now created by Artificial Intelligence, I made a conscious choice to build something different. <b>zenifyMove has zero AI.</b><br/><br/>
+        I didn't want to build another "intelligent" tool that pretends to know you better than you know yourself. External intelligence can create distraction and comparison fatigue. Instead, zenifyMove is a space for Human Intelligence—yours.<br/><br/>
+        It is a quiet, private mirror designed to help you look inward, trust your own instincts, and notice your own patterns—toward your health and financial goals, using the intelligence that only you possess.
+      </p>
+      <div class="hr"></div>
+      <div class="btnrow" style="justify-content:space-between">
+        <div class="tiny">Privacy by design: never sold, never used to train models.</div>
+        <button class="cta" id="storyCTA">Start zenifyMove today</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const prompts = [{"cluster": 1, "title": "CLUSTER 1 – HOW MY DAY BEGAN", "q": "On waking up, my body felt…", "type": "options", "options": ["Light / Rested", "Okay but stiff", "Heavy / Tired"], "tip": "Body signals vary daily. This is just today’s signal."}, {"cluster": 1, "title": "CLUSTER 1 – HOW MY DAY BEGAN", "q": "The pace of my morning was…", "type": "options", "options": ["Calm", "Mixed", "Rushed"], "tip": "Rushed mornings are common. Not a failure."}, {"cluster": 1, "title": "CLUSTER 1 – HOW MY DAY BEGAN", "q": "The first thing that entered my body was…", "type": "options", "options": ["Water", "Tea / Coffee", "Food", "Nothing"], "tip": "This is awareness, not a health rule."}, {"cluster": 1, "title": "CLUSTER 1 – HOW MY DAY BEGAN", "q": "Before breakfast, some movement happened", "type": "options", "options": ["Yes", "No"], "tip": "Movement includes chores, walking, stretching."}, {"cluster": 1, "title": "CLUSTER 1 – HOW MY DAY BEGAN", "q": "Before stepping into the day, health crossed my mind", "type": "options", "options": ["Yes", "No"], "tip": "Thinking once is enough."}, {"cluster": 2, "title": "CLUSTER 2 – HOW MY BODY MOVED TODAY", "q": "Some intentional movement happened today", "type": "options", "options": ["Yes", "No"], "tip": "Movement looks different for different bodies."}, {"cluster": 2, "title": "CLUSTER 2 – HOW MY BODY MOVED TODAY", "q": "The movement felt…", "type": "options", "options": ["Light", "Moderate", "Tiring"], "tip": "Tired is feedback, not failure."}, {"cluster": 2, "title": "CLUSTER 2 – HOW MY BODY MOVED TODAY", "q": "My breathing during movement felt…", "type": "options", "options": ["Comfortable", "Slightly strained", "Heavy"], "tip": "Breath matters more than speed."}, {"cluster": 2, "title": "CLUSTER 2 – HOW MY BODY MOVED TODAY", "q": "Today’s body felt more…", "type": "options", "options": ["Flexible", "Same as usual", "Stiff"], "tip": "Stiffness reflects stress or sleep too."}, {"cluster": 2, "title": "CLUSTER 2 – HOW MY BODY MOVED TODAY", "q": "I acknowledged my body’s effort today", "type": "options", "options": ["Yes", "No"], "tip": "Recognition builds consistency."}, {"cluster": 3, "title": "CLUSTER 3 – HOW I APPROACHED MY FIRST MEAL", "q": "Breakfast today was mostly…", "type": "options", "options": ["Home-prepared", "Outside / Packed", "Skipped"], "tip": "Skipping is information, not a mistake."}, {"cluster": 3, "title": "CLUSTER 3 – HOW I APPROACHED MY FIRST MEAL", "q": "I noticed portion size today", "type": "options", "options": ["Yes", "No"], "tip": "Noticing once is enough."}, {"cluster": 3, "title": "CLUSTER 3 – HOW I APPROACHED MY FIRST MEAL", "q": "Oil or sugar awareness crossed my mind", "type": "options", "options": ["Yes", "No"], "tip": "Awareness does not require restriction."}, {"cluster": 3, "title": "CLUSTER 3 – HOW I APPROACHED MY FIRST MEAL", "q": "After breakfast, my energy felt…", "type": "options", "options": ["Stable", "Heavy", "Low"], "tip": "Energy response is personal."}, {"cluster": 3, "title": "CLUSTER 3 – HOW I APPROACHED MY FIRST MEAL", "q": "I ate without rushing", "type": "options", "options": ["Yes", "No"], "tip": "Rushed meals are common."}, {"cluster": 4, "title": "CLUSTER 4 – HOW MONEY SHOWED UP DURING WORK HOURS", "q": "Any unplanned spending happened today", "type": "options", "options": ["Yes", "No"], "tip": "Unplanned doesn’t mean unnecessary."}, {"cluster": 4, "title": "CLUSTER 4 – HOW MONEY SHOWED UP DURING WORK HOURS", "q": "The spend was mostly for…", "type": "options", "options": ["Food / Beverage", "Convenience", "Social / Work"], "tip": "Context matters more than amount."}, {"cluster": 4, "title": "CLUSTER 4 – HOW MONEY SHOWED UP DURING WORK HOURS", "q": "This spend felt…", "type": "options", "options": ["Useful", "Neutral", "Avoidable"], "tip": "Neutral spends are normal."}, {"cluster": 4, "title": "CLUSTER 4 – HOW MONEY SHOWED UP DURING WORK HOURS", "q": "I paused briefly before spending", "type": "options", "options": ["Yes", "No"], "tip": "A pause is already a win."}, {"cluster": 4, "title": "CLUSTER 4 – HOW MONEY SHOWED UP DURING WORK HOURS", "q": "I felt okay about this spend later", "type": "options", "options": ["Yes", "No"], "tip": "Regret is a signal, not a verdict."}, {"cluster": 5, "title": "CLUSTER 5 – HOW LUNCH AFFECTED MY DAY", "q": "Lunch today was mostly…", "type": "options", "options": ["Home-prepared", "Outside", "Skipped"], "tip": "Access and schedule matter."}, {"cluster": 5, "title": "CLUSTER 5 – HOW LUNCH AFFECTED MY DAY", "q": "Lunch portion felt…", "type": "options", "options": ["Light", "Balanced", "Heavy"], "tip": "Perception is enough."}, {"cluster": 5, "title": "CLUSTER 5 – HOW LUNCH AFFECTED MY DAY", "q": "After lunch, my alertness felt…", "type": "options", "options": ["Steady", "Sleepy", "Low"], "tip": "Post-lunch dips are common."}, {"cluster": 5, "title": "CLUSTER 5 – HOW LUNCH AFFECTED MY DAY", "q": "I reached for snacks soon after", "type": "options", "options": ["Yes", "No"], "tip": "Snacking reflects energy needs."}, {"cluster": 5, "title": "CLUSTER 5 – HOW LUNCH AFFECTED MY DAY", "q": "Lunch supported my workday", "type": "options", "options": ["Yes", "No"], "tip": "Support doesn’t mean perfection."}, {"cluster": 6, "title": "CLUSTER 6 – HOW EMOTIONS & PEOPLE INFLUENCED MY SPENDING", "q": "Spending today was influenced by emotion or people", "type": "options", "options": ["Yes", "No"], "tip": "Family and obligations matter."}, {"cluster": 6, "title": "CLUSTER 6 – HOW EMOTIONS & PEOPLE INFLUENCED MY SPENDING", "q": "The main influence felt like…", "type": "options", "options": ["Family need", "Social obligation", "Emotional comfort", "None"], "tip": "Context matters more than control."}, {"cluster": 6, "title": "CLUSTER 6 – HOW EMOTIONS & PEOPLE INFLUENCED MY SPENDING", "q": "This spending felt…", "type": "options", "options": ["Meaningful", "Neutral", "Slightly pressured"], "tip": "Pressure is a signal."}, {"cluster": 6, "title": "CLUSTER 6 – HOW EMOTIONS & PEOPLE INFLUENCED MY SPENDING", "q": "I felt comfortable saying ‘not now’ today", "type": "options", "options": ["Yes", "No", "Not applicable"], "tip": "Boundaries grow slowly."}, {"cluster": 6, "title": "CLUSTER 6 – HOW EMOTIONS & PEOPLE INFLUENCED MY SPENDING", "q": "Looking back, this spend aligns with my values", "type": "options", "options": ["Yes", "Unsure", "No"], "tip": "Uncertainty is allowed."}, {"cluster": 7, "title": "CLUSTER 7 – HOW I HANDLED EVENING HUNGER & CRAVINGS", "q": "Evening hunger or cravings showed up today", "type": "options", "options": ["Yes", "No"], "tip": "Cravings reflect fatigue often."}, {"cluster": 7, "title": "CLUSTER 7 – HOW I HANDLED EVENING HUNGER & CRAVINGS", "q": "The craving was mostly for…", "type": "options", "options": ["Sweet", "Fried / Salty", "Tea / Coffee", "Nothing specific"], "tip": "This is just noticing."}, {"cluster": 7, "title": "CLUSTER 7 – HOW I HANDLED EVENING HUNGER & CRAVINGS", "q": "I paused before acting on the craving", "type": "options", "options": ["Yes", "No"], "tip": "A pause is progress."}, {"cluster": 7, "title": "CLUSTER 7 – HOW I HANDLED EVENING HUNGER & CRAVINGS", "q": "What I chose felt…", "type": "options", "options": ["Satisfying", "Neutral", "Slightly heavy"], "tip": "Satisfaction matters more than restriction."}, {"cluster": 7, "title": "CLUSTER 7 – HOW I HANDLED EVENING HUNGER & CRAVINGS", "q": "I noticed how my body felt after", "type": "options", "options": ["Yes", "No"], "tip": "Body feedback teaches faster than rules."}, {"cluster": 8, "title": "CLUSTER 8 – HOW I PROTECTED MY SAVINGS TODAY", "q": "My savings were respected today", "type": "options", "options": ["Yes", "No", "Not applicable"], "tip": "Auto-savings count, even when unnoticed."}, {"cluster": 8, "title": "CLUSTER 8 – HOW I PROTECTED MY SAVINGS TODAY", "q": "Any spend today came from…", "type": "options", "options": ["Planned budget", "Discretionary money", "Savings / buffer"], "tip": "Knowing the source matters more than the amount."}, {"cluster": 8, "title": "CLUSTER 8 – HOW I PROTECTED MY SAVINGS TODAY", "q": "I felt at ease with today’s money choices", "type": "options", "options": ["Yes", "Somewhat", "No"], "tip": "Ease is a strong indicator of discipline."}, {"cluster": 8, "title": "CLUSTER 8 – HOW I PROTECTED MY SAVINGS TODAY", "q": "I consciously avoided at least one unnecessary spend", "type": "options", "options": ["Yes", "No", "Didn’t notice"], "tip": "Avoidance is also an action."}, {"cluster": 8, "title": "CLUSTER 8 – HOW I PROTECTED MY SAVINGS TODAY", "q": "Today strengthened my trust in myself with money", "type": "options", "options": ["Yes", "Not sure", "No"], "tip": "Trust builds slowly and unevenly."}, {"cluster": 9, "title": "CLUSTER 9 – HOW MY EVENING SUPPORTED REST & HEALTH", "q": "Dinner timing today felt…", "type": "options", "options": ["Earlier than usual", "Around usual time", "Later than usual"], "tip": "Schedules vary across households."}, {"cluster": 9, "title": "CLUSTER 9 – HOW MY EVENING SUPPORTED REST & HEALTH", "q": "Dinner portion felt…", "type": "options", "options": ["Light", "Balanced", "Heavy"], "tip": "Perception is enough for awareness."}, {"cluster": 9, "title": "CLUSTER 9 – HOW MY EVENING SUPPORTED REST & HEALTH", "q": "After dinner, screen time was…", "type": "options", "options": ["Light", "Moderate", "Heavy"], "tip": "Screens are often used to decompress."}, {"cluster": 9, "title": "CLUSTER 9 – HOW MY EVENING SUPPORTED REST & HEALTH", "q": "My body felt ready to rest", "type": "options", "options": ["Yes", "Somewhat", "No"], "tip": "Rest readiness reflects the whole day."}, {"cluster": 9, "title": "CLUSTER 9 – HOW MY EVENING SUPPORTED REST & HEALTH", "q": "I allowed myself to slow down tonight", "type": "options", "options": ["Yes", "No"], "tip": "Slowing down is a discipline, not laziness."}, {"cluster": 10, "title": "CLUSTER 10 – HOW MY DAY SETTLED", "q": "One thing today that supported my body was…", "type": "text", "placeholder": "One line (optional)", "tip": "Even a small thing counts."}, {"cluster": 10, "title": "CLUSTER 10 – HOW MY DAY SETTLED", "q": "One thing today that respected my money was…", "type": "text", "placeholder": "One line (optional)", "tip": "Not spending is also a decision."}, {"cluster": 10, "title": "CLUSTER 10 – HOW MY DAY SETTLED", "q": "Did I eat dinner earlier than usual today?", "type": "options", "options": ["Yes", "No", "Not sure"], "tip": "Late dinners happen. Awareness helps more than guilt."}, {"cluster": 10, "title": "CLUSTER 10 – HOW MY DAY SETTLED", "q": "How was my screen time after dinner?", "type": "options", "options": ["Minimal", "Moderate", "High"], "tip": "Screens are often used to decompress. This is just noticing."}, {"cluster": 10, "title": "CLUSTER 10 – HOW MY DAY SETTLED", "q": "For tomorrow, one intention is…", "type": "text", "placeholder": "Optional", "tip": "Intentions are invitations, not promises."}, {"cluster": 11, "title": "OPTIONAL – PURPOSE THROUGH CONTRIBUTION", "q": "Today, did anything I did support or help someone else?", "type": "options", "options": ["Yes, in a small way", "Yes, in a meaningful way", "Not today", "Not sure"], "tip": "Helping doesn’t have to be visible or dramatic. Even listening or being patient counts."}, {"cluster": 11, "title": "OPTIONAL – PURPOSE THROUGH CONTRIBUTION", "q": "If you want to remember it: what was it? (one line)", "type": "text", "placeholder": "Optional", "tip": "This is for remembering, not evaluating."}];
+
+  const clusterNotes = {
+    1:"There is no right way to start a day. Just notice how yours began.",
+    2:"Movement looks different for different bodies and days.",
+    3:"Food choices are shaped by culture, family, and routine.",
+    4:"Small spends often happen automatically. This is about noticing.",
+    5:"Lunch influences the rest of the day more than we realise.",
+    6:"Money decisions often involve people, emotions, and obligations.",
+    7:"Evenings are when energy drops and habits take over.",
+    8:"Saving is a habit, not a leftover.",
+    9:"Evenings decide sleep, weight, and recovery.",
+    10:"This is not a review. It’s a gentle closing of the day.",
+    11:"Optional. Skip without impact."
+  };
+
+  const promptColors = ["#3b0a7a","#5b21b6","#00e5ff","#a3ff12","#111827","#7c3aed","#0891b2","#16a34a"];
+  const promptColor = (i) => promptColors[i % promptColors.length];
+
+  const pad2 = (n) => String(n).padStart(2,"0");
+  const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const dayKey = (d) => `zenifyMove:day:${ymd(d)}`;
+  const finishKey = (d) => `zenifyMove:finish:${ymd(d)}`;
+
+  const loadDay = (d) => {
+    try { return JSON.parse(localStorage.getItem(dayKey(d)) || "{}"); } catch(e){ return {}; }
+  };
+  const saveDay = (d, obj) => localStorage.setItem(dayKey(d), JSON.stringify(obj));
+  const countAnswered = (obj) => Object.values(obj).filter(v => v!==null && v!==undefined && String(v).trim()!=="").length;
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+
+  let activeDate = new Date();
+  let idx = 0;
+
+  const screens = ["intro","home","today","insights","reminders","calendar"];
+  function show(name){
+    screens.forEach(s => document.getElementById(s).classList.remove("active"));
+    document.getElementById(name).classList.add("active");
+    ["navIntro","navHome","navToday","navInsights","navReminders","navCalendar"].forEach(id => document.getElementById(id).classList.remove("active"));
+    const map = {intro:"navIntro", home:"navHome", today:"navToday", insights:"navInsights", reminders:"navReminders", calendar:"navCalendar"};
+    document.getElementById(map[name]).classList.add("active");
+    if(name==="calendar") renderCalendar();
+    if(name==="today") renderWizard();
+  }
+
+  navIntro.onclick=()=>show("intro");
+  navHome.onclick=()=>show("home");
+  navToday.onclick=()=>{ setActiveDate(new Date()); show("today"); };
+  navInsights.onclick=()=>show("insights");
+  navReminders.onclick=()=>show("reminders");
+  navCalendar.onclick=()=>show("calendar");
+
+  const storyModal = document.getElementById("storyModal");
+  function openStory(){ storyModal.classList.add("active"); }
+  function closeStory(){ storyModal.classList.remove("active"); }
+  readStoryBtn1.onclick=openStory;
+  readStoryBtn2.onclick=openStory;
+  closeStory.onclick=closeStory;
+  storyCTA.onclick=()=>{ closeStory(); setActiveDate(new Date()); show("today"); };
+  storyModal.addEventListener("click",(e)=>{ if(e.target === storyModal) closeStory(); });
+
+  goHomeBtn.onclick=()=>show("home");
+  tryTodayBtn.onclick=()=>{ setActiveDate(new Date()); show("today"); };
+
+  const activeDateChip = document.getElementById("activeDateChip");
+  const activeHint = document.getElementById("activeHint");
+  const clusterBadge = document.getElementById("clusterBadge");
+  const qSpan = document.getElementById("qText").querySelector("span");
+  const resp = document.getElementById("resp");
+  const micro = document.getElementById("micro");
+  const prog = document.getElementById("prog");
+  const promptIdxChip = document.getElementById("promptIdx");
+  const shiftChip = document.getElementById("shiftChip");
+  const yLbl = document.getElementById("yLbl");
+  const tLbl = document.getElementById("tLbl");
+  const yVal = document.getElementById("yVal");
+  const tVal = document.getElementById("tVal");
+  const finishDayBtn = document.getElementById("finishDayBtn");
+
+  function firstUnansweredIndex(d){
+    const obj = loadDay(d);
+    for(let i=0;i<prompts.length;i++) {
+      const v = (obj[`p${i}`] ?? "").trim();
+      if(!v) return i;
+    }
+    return 0;
+  }
+
+  function setActiveDate(d){
+    activeDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    idx = firstUnansweredIndex(activeDate);
+    activeDateChip.textContent = `Date: ${ymd(activeDate)}`;
+    tLbl.textContent = `Selected day (${activeDate.toLocaleString(undefined,{month:"short"})} ${activeDate.getDate()})`;
+    const yd = addDays(activeDate,-1);
+    yLbl.textContent = `Yesterday (${yd.toLocaleString(undefined,{month:"short"})} ${yd.getDate()})`;
+    activeHint.textContent = (ymd(activeDate) === ymd(new Date()))
+      ? "You are on today. Use Calendar to backfill any date."
+      : "You are editing a past day from Calendar.";
+  }
+
+  function getVal(dayObj, i){ return (dayObj[`p${i}`] ?? "").trim(); }
+  function setValForActive(i, v){
+    const obj = loadDay(activeDate);
+    obj[`p${i}`] = v;
+    saveDay(activeDate, obj);
+  }
+  function shiftLabel(y,t){
+    const ys=(y||"").trim(), ts=(t||"").trim();
+    if(!ys && !ts) return "—";
+    if(ys === ts) return "Same";
+    if(!ys && ts) return "New today";
+    if(ys && !ts) return "Blank today";
+    return "Shift";
+  }
+
+  function renderWizard(){
+    const p = prompts[idx];
+    const tObj = loadDay(activeDate);
+    const yObj = loadDay(addDays(activeDate,-1));
+
+    promptIdxChip.textContent = `Prompt ${idx+1} / ${prompts.length}`;
+    prog.style.width = `${Math.round(((idx+1)/prompts.length)*100)}%`;
+
+    clusterBadge.textContent = p.title;
+    clusterBadge.title = clusterNotes[p.cluster] || "";
+
+    qSpan.textContent = p.q;
+    qSpan.style.color = promptColor(idx);
+
+    const y = getVal(yObj, idx);
+    const t = getVal(tObj, idx);
+    yVal.textContent = y || "—";
+    tVal.textContent = t || "—";
+    shiftChip.textContent = shiftLabel(y,t);
+
+    resp.innerHTML = "";
+    if(p.type === "options") {
+      const wrap = document.createElement("div");
+      wrap.className = "options";
+      p.options.forEach((opt,j)=>{
+        const id = `r-${idx}-${j}`;
+        const lab = document.createElement("label");
+        lab.className = "opt";
+        lab.setAttribute("for", id);
+        lab.innerHTML = `<input type="radio" id="${id}" name="r" value="${opt}">${opt}`;
+        wrap.appendChild(lab);
+      });
+      resp.appendChild(wrap);
+      resp.querySelectorAll("input[type=radio]").forEach(r=>{
+        if(r.value === t) r.checked = true;
+        r.onchange = () => { setValForActive(idx, r.value); renderWizard(); };
+      });
+    } else {
+      const input = document.createElement("input");
+      input.className = "textline";
+      input.type = "text";
+      input.placeholder = p.placeholder || "Type here (optional)";
+      input.value = t;
+      input.oninput = () => { setValForActive(idx, input.value.trim()); };
+      input.onblur = () => renderWizard();
+      resp.appendChild(input);
+    }
+
+    micro.textContent = p.tip;
+
+    prev.disabled = (idx<=0);
+    next.textContent = (idx === prompts.length-1) ? "Done" : "Next";
+  }
+
+  prev.onclick = () => { if(idx>0){ idx--; renderWizard(); } };
+  skip.onclick = () => { if(idx < prompts.length-1){ idx++; renderWizard(); } };
+  next.onclick = () => {
+    if(idx < prompts.length-1){ idx++; renderWizard(); }
+    else { alert("Saved. You can return anytime."); }
+  };
+
+  finishDayBtn.onclick = () => {
+    localStorage.setItem(finishKey(activeDate), "true");
+    alert("Finish Day marked.");
+  };
+
+  const remKey = "zenifyMove:reminders";
+  const defaults = {
+    morning:{enabled:true,time:"07:30"},
+    midday:{enabled:false,time:"13:00"},
+    evening:{enabled:true,time:"19:30"},
+    bed:{enabled:true,time:"22:15"}
+  };
+  function loadRem(){
+    try {
+      const v = JSON.parse(localStorage.getItem(remKey) || "null");
+      if(!v) return JSON.parse(JSON.stringify(defaults));
+      return {
+        morning:{enabled:!!v.morning?.enabled,time:v.morning?.time||defaults.morning.time},
+        midday:{enabled:!!v.midday?.enabled,time:v.midday?.time||defaults.midday.time},
+        evening:{enabled:!!v.evening?.enabled,time:v.evening?.time||defaults.evening.time},
+        bed:{enabled:!!v.bed?.enabled,time:v.bed?.time||defaults.bed.time},
+      };
+    } catch(e) { return JSON.parse(JSON.stringify(defaults)); }
+  }
+  function bindRem(){
+    const r=loadRem();
+    tMorning.value=r.morning.time; eMorning.checked=r.morning.enabled;
+    tMidday.value=r.midday.time; eMidday.checked=r.midday.enabled;
+    tEvening.value=r.evening.time; eEvening.checked=r.evening.enabled;
+    tBed.value=r.bed.time; eBed.checked=r.bed.enabled;
+  }
+  bindRem();
+  saveRem.onclick = () => {
+    const obj = {
+      morning:{enabled:eMorning.checked, time:tMorning.value || defaults.morning.time},
+      midday:{enabled:eMidday.checked, time:tMidday.value || defaults.midday.time},
+      evening:{enabled:eEvening.checked, time:tEvening.value || defaults.evening.time},
+      bed:{enabled:eBed.checked, time:tBed.value || defaults.bed.time},
+    };
+    localStorage.setItem(remKey, JSON.stringify(obj));
+    alert("Saved locally.");
+  };
+
+  let calCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  function isLastSaturday(d){
+    if(d.getDay() !== 6) return false;
+    const next = new Date(d); next.setDate(d.getDate()+7);
+    return next.getMonth() !== d.getMonth();
+  }
+  function isFinished(d){
+    return localStorage.getItem(finishKey(d)) === "true";
+  }
+  function renderCalendar(){
+    const grid = document.getElementById("calGrid");
+    if(!grid) return;
+    grid.innerHTML = "";
+
+    const y = calCursor.getFullYear();
+    const m = calCursor.getMonth();
+    calTitle.textContent = `${calCursor.toLocaleString(undefined,{month:"long"})} ${y}`;
+
+    const first = new Date(y,m,1);
+    const last = new Date(y,m+1,0);
+    const startDow = first.getDay();
+
+    for(let i=0;i<startDow;i++) {
+      const blank = document.createElement("div");
+      blank.className = "day dim";
+      blank.innerHTML = `<div class="n"><span> </span><span></span></div>`;
+      grid.appendChild(blank);
+    }
+
+    for(let d=1; d<=last.getDate(); d++) {
+      const cur = new Date(y,m,d);
+      const obj = loadDay(cur);
+      const done = countAnswered(obj) > 0;
+      const fin = isFinished(cur);
+
+      const marks = [];
+      if(done) marks.push(`<span class="tag done">✅</span>`);
+      if(fin) marks.push(`<span class="tag fin">✨</span>`);
+      if(isLastSaturday(cur)) marks.push(`<span class="tag ins">🗓️</span>`);
+      if(cur.getMonth()===0 && cur.getDate()===1) marks.push(`<span class="tag ins">🏁</span>`);
+      if(cur.getMonth()===11 && cur.getDate()===31) marks.push(`<span class="tag ins">🏁</span>`);
+
+      const cell = document.createElement("div");
+      cell.className = "day";
+      cell.innerHTML = `
+        <div class="n">
+          <span>${d}</span>
+          <span style="color:rgba(75,85,99,.8)">${cur.toLocaleString(undefined,{weekday:"short"}).slice(0,2)}</span>
+        </div>
+        <div class="marks">${marks.join("")}</div>
+      `;
+      cell.onclick = () => {
+        setActiveDate(cur);
+        show("today");
+      };
+      grid.appendChild(cell);
+    }
+  }
+
+  calPrev.onclick = () => { calCursor.setMonth(calCursor.getMonth()-1); renderCalendar(); };
+  calNext.onclick = () => { calCursor.setMonth(calCursor.getMonth()+1); renderCalendar(); };
+  goTodayFromCal.onclick = () => { setActiveDate(new Date()); show("today"); };
+
+  setActiveDate(new Date());
+  renderCalendar();
+</script>
+</body>
+</html>
